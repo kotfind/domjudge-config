@@ -118,14 +118,11 @@ Create a problem template with `bin/gen_problem_template`. For more information 
 ```bash
 bin/gen_problem_template -h
 ```
-After updating it, go to problem's directory and put it's contents into archive.
-The archive should be called same as problem's short name (i.e. `A`, `B`, `C`, ...).
+
+After updating it, use `./bin/load_problem` to upload it. For more information run:
 ```bash
-cd A
-7z a A.zip ./*
+bin/load_problem -h
 ```
-Go to `Problems > Import problem > Problems > Import JSON / YAML`.
-Select contest and problem archive, press `Import`.
 
 ### Other configuration
 To allow teams to download their submissions go to `Configuration settings > Display > Allow team submission download`.
