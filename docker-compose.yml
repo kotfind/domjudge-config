@@ -1,0 +1,51 @@
+services:
+  db:
+    image: mariadb:latest
+    restart: always
+    command: ["--max-connections=1000"] 
+    volumes:
+      - data:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=domjudge
+      - MYSQL_USER=domjudge
+      - MYSQL_PASSWORD=domjudge
+      - MYSQL_DATABASE=domjudge
+    networks:
+      - network
+
+  server:
+    image: domjudge/domserver:latest
+    restart: always
+    ports:
+      - "8000:80"
+    environment:
+      - CONTAINER_TIMEZONE=Europe/Moscow
+      - MYSQL_HOST=db
+      - MYSQL_USER=domjudge
+      - MYSQL_DATABASE=domjudge
+      - MYSQL_PASSWORD=domjudge
+      - MYSQL_ROOT_PASSWORD=domjudge
+      - DJ_DB_INSTALL_BARE=1
+    networks:
+      - network
+
+  judge-0:
+    image: domjudge/judgehost:latest
+    hostname: judge-0
+    restart: always
+    privileged: true
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup
+    environment:
+      - CONTAINER_TIMEZONE=Europe/Moscow
+      - DOMSERVER_BASEURL=server/
+      - JUDGEDAEMON_PASSWORD=judgejudgejudge # TODO: change me
+      - DAEMON_ID=0 
+    networks:
+      - network
+
+networks:
+  network:
+
+volumes:
+  data:

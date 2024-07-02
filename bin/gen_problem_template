@@ -1,0 +1,163 @@
+#!/bin/bash
+
+set -e
+
+EXEC_NAME="$0"
+
+usage() {
+cat << END 1>&2
+Usage:
+    $EXEC_NAME -h
+    $EXEC_NAME [OPTIONS] <short_name> <long_name>
+
+Description:
+    Generates a template for a problem.
+    <long_name> is full name of a problem. Ex. "My Problem"
+    <short_name> is usualy a single upper-case letter. Ex. "A"
+    Result is stored in <short_name> directory.
+
+Options:
+    -h                 Prints this message.
+    -s <samples_num>   Sets number of samples. Default: 1
+    -S <secrets_num>   Sets number of secrets. Default: 1
+    -t <time_limit>    Sets time limit in seconds. Default: 1
+    -m <memory_limit>  Sets memory limit in kilobytes. Default: 1024
+END
+}
+
+samples_num=1
+secrets_num=1
+time_limit=1
+memory_limit=1
+
+while getopts ":hs:S:t:m:" arg; do
+    case "${arg}" in
+        "h")
+            usage
+            exit 0
+            ;;
+
+        "s")
+            samples_num="$OPTARG"
+            ;;
+
+        "S")
+            secrets_num="$OPTARG"
+            ;;
+
+        "t")
+            time_limit="$OPTARG"
+            ;;
+
+        "m")
+            memory_limit="$OPTARG"
+            ;;
+
+        *)
+            usage
+            exit 1
+            ;;
+    esac
+done
+shift $(($OPTIND - 1))
+
+short_name="$1"
+long_name="$2"
+
+if [ -z "$short_name" ] || [ -z "$long_name" ]; then
+    usage
+    exit 1
+fi
+
+# -------------------- Metadata --------------------
+mkdir -p "$short_name"
+
+cat << END > "$short_name/problem.yaml"
+name: "$long_name"
+limits:
+    memory: $memory_limit
+END
+
+cat << END > "$short_name/domjudge-problem.ini"
+timelimit = $time_limit
+END
+
+# -------------------- Samples --------------------
+
+sample_dir="$short_name/data/sample"
+mkdir -p "$sample_dir"
+for i in $(seq 1 $samples_num); do
+    touch "$sample_dir/$i.in"
+    touch "$sample_dir/$i.ans"
+done
+
+secret_dir="$short_name/data/secret"
+mkdir -p "$secret_dir"
+for i in $(seq 1 $secrets_num); do
+    touch "$secret_dir/$i.in"
+    touch "$secret_dir/$i.ans"
+done
+
+# -------------------- Input Validators --------------------
+
+input_validators_dir="$short_name/input_validators"
+mkdir -p "$input_validators_dir"
+
+cat << END > "$input_validators_dir/validate.py"
+#!/bin/python3
+
+# TODO
+
+exit(42) # Success
+END
+
+# -------------------- Statement --------------------
+
+statement_dir="$short_name/problem_statement"
+mkdir -p "$statement_dir"
+cat << END > "$statement_dir/solution.txt"
+TODO
+END
+
+cat << END > "$statement_dir/problem.ru.tex"
+\problemname{Задача $short_name. $long_name}
+% \illustration{.4}{problem}{}
+% TODO
+
+\section*{Формат ввода}
+% TODO
+
+\section*{Формат вывода}
+% TODO
+END
+
+# -------------------- Submissions --------------------
+submissions_dir="$short_name/submissions"
+accepted_dir="$submissions_dir/accepted"
+wrong_answer_dir="$submissions_dir/wrong_answer"
+time_limit_exceeded_dir="$submissions_dir/time_limit_exceeded"
+run_time_error_dir="$submissions_dir/run_time_error"
+
+mkdir -p "$submissions_dir"
+mkdir -p "$accepted_dir"
+mkdir -p "$wrong_answer_dir"
+mkdir -p "$time_limit_exceeded_dir"
+mkdir -p "$run_time_error_dir"
+
+touch "$accepted_dir/main.cpp"
+
+# -------------------- Message --------------------
+cat << END
+All Done!
+
+Please update following files/directories:
+    $sample_dir/
+    $secret_dir/
+    $input_validators_dir/validate.py
+    $statement_dir/solution.txt
+    $statement_dir/problem.ru.tex
+    $submissions_dir/
+
+Please create following files:
+    $short_name/problem.pdf or $short_name/problem.html or $short_name/problem.txt
+END

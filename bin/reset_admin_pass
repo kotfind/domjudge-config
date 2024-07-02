@@ -1,0 +1,3 @@
+#!/bin/bash
+
+docker compose exec server /opt/domjudge/domserver/webapp/bin/console domjudge:reset-user-password admin
