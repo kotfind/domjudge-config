@@ -1,0 +1,60 @@
+#!/bin/bash
+
+set -e
+set -o pipefail
+
+EXEC_NAME=$0
+
+usage() {
+cat << END 1>&2
+Usage:
+    $EXEC_NAME -h
+    $EXEC_NAME [OPTIONS]
+
+Description:
+    Returns string in format "Authorization: Basic *some base64 code*",
+    an authorization header for DOMjudge API.
+
+Environment:
+    Following environment variables must be set:
+        DOMJUDGE_DOMAIN
+        DOMJUDGE_ADMIN_NAME (optional, default: admin)
+        DOMJUDGE_ADMIN_PASS
+
+Options:
+    -h               Prints this message.
+END
+}
+
+while getopts ":h" arg; do
+    case "${arg}" in
+        "h")
+            usage
+            exit 0
+            ;;
+
+        *)
+            usage
+            exit 1
+            ;;
+    esac
+done
+shift $((OPTIND-1))
+
+if [ -z "$DOMJUDGE_DOMAIN" ]; then
+    echo "error: DOMJUDGE_DOMAIN not set" 1>&2
+    usage
+    exit 1
+fi
+
+if [ -z "$DOMJUDGE_ADMIN_NAME" ]; then
+    DOMJUDGE_ADMIN_NAME="admin"
+fi
+
+if [ -z "$DOMJUDGE_ADMIN_PASS" ]; then
+    echo "error: DOMJUDGE_ADMIN_PASS not set" 1>&2
+    usage
+    exit 1
+fi
+
+echo "Authorization: Basic $(echo -n "$DOMJUDGE_ADMIN_NAME:$DOMJUDGE_ADMIN_PASS" | base64)"

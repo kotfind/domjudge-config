@@ -3,7 +3,7 @@
 set -e
 
 EXEC_NAME=$0
-USERS_FILE="users.txt"
+ADD_USER="$(dirname "$EXEC_NAME")/add_user"
 
 usage() {
 cat << END 1>&2
@@ -12,14 +12,12 @@ Usage:
     $EXEC_NAME [OPTIONS]
 
 Description:
-    Generates <number> users. Optionaly adds records into $USERS_FILE file and
-    prints them.
+    Runs $ADD_USER script on batch of users. For more info run:
+        $ADD_USER -h
 
 Environment:
-    Following environment variables must be set:
-        DOMJUDGE_DOMAIN
-        DOMJUDGE_ADMIN_NAME (optional, default: admin)
-        DOMJUDGE_ADMIN_PASS
+    Some environment variables must be set. For more info run:
+        $ADD_USER -h
 
 Options:
     -h                  Prints this message.
@@ -29,7 +27,7 @@ Options:
     -p <pass_length>    Sets generated password length.
     -g <group_ids>      Sets team group_ids. Comma separated list. Required.
     -q                  Turns on quiet mode.
-    -w                  Don't write $USERS_FILE.
+    -w                  Don't write to file.
 END
 }
 
@@ -89,5 +87,5 @@ for i in $(seq 1 $num); do
     team_name=$(printf "%s%0*d" "$team_prefix" "$numlen" "$i")
     user_name=$(printf "%s%0*d" "$user_prefix" "$numlen" "$i")
 
-    "$(dirname "$0")/add_user" $add_user_flags -t "$team_name" -u "$user_name"
+    $ADD_USER $add_user_flags -t "$team_name" -u "$user_name"
 done

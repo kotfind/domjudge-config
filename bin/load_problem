@@ -4,6 +4,7 @@ set -e
 set -o pipefail
 
 EXEC_NAME="$0"
+GET_AUTH_HEADER="$(dirname "$EXEC_NAME")/__get_auth_header__"
 
 usage() {
 cat << END 1>&2
@@ -12,10 +13,8 @@ Usage:
     $EXEC_NAME [OPTIONS] <short_name>
 
 Environment:
-    If used without -u flag, then following environment variables must be set:
-        DOMJUDGE_DOMAIN
-        DOMJUDGE_ADMIN_NAME (optional, default: admin)
-        DOMJUDGE_ADMIN_PASS
+    If used without -u flag, then some environment variables must be set. For more info run:
+        $GET_AUTH_HEADER -h
 
 Description:
     Upload problem from <short_name> directory into DOMjudge.
@@ -75,23 +74,7 @@ if [ -z "$contest_id" ] && [ "$upload" = true ]; then
 fi
 
 if [ "$upload" = true ]; then
-    if [ -z "$DOMJUDGE_DOMAIN" ]; then
-        echo "error: DOMJUDGE_DOMAIN not set" 1>&2
-        usage
-        exit 1
-    fi
-
-    if [ -z "$DOMJUDGE_ADMIN_NAME" ]; then
-        DOMJUDGE_ADMIN_NAME="admin"
-    fi
-
-    if [ -z "$DOMJUDGE_ADMIN_PASS" ]; then
-        echo "error: DOMJUDGE_ADMIN_PASS not set" 1>&2
-        usage
-        exit 1
-    fi
-
-    auth_header="Authorization: Basic $(echo -n "$DOMJUDGE_ADMIN_NAME:$DOMJUDGE_ADMIN_PASS" | base64)"
+    auth_header=$($GET_AUTH_HEADER)
     base_url="$DOMJUDGE_DOMAIN/api/v4"
 fi
 
