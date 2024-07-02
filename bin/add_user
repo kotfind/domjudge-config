@@ -110,7 +110,11 @@ out() {
     fi
 }
 
+
+# tr has non-zero return code
+set +e
 pass="$(tr -dc 'A-Za-z0-9!?%=' < /dev/urandom | head -c "$passlen")"
+set -e
 
 team_id=$(curl "$base_url/teams?strict=false" \
     -fsS \
