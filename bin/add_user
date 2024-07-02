@@ -113,7 +113,7 @@ out() {
 pass="$(tr -dc 'A-Za-z0-9!?%=' < /dev/urandom | head -c "$passlen")"
 
 team_id=$(curl "$base_url/teams?strict=false" \
-    -s \
+    -fsS \
     -X "POST" \
     -H "accept: application/json" \
     -H "Content-Type: multipart/form-data" \
@@ -124,7 +124,7 @@ team_id=$(curl "$base_url/teams?strict=false" \
     | jq -r ".id")
 
 curl "$base_url/users" \
-    -s \
+    -fsS \
     -X "POST" \
     -H "accept: application/json" \
     -H "$auth_header" \

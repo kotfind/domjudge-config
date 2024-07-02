@@ -151,7 +151,7 @@ if [ "$upload" = true ]; then
     fi
 
     messages=$(curl "$url" \
-        -s -f \
+        -fsS \
         -X "POST" \
         -H "$auth_header" \
         -H "accept: application/json" \
