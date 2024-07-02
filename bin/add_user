@@ -1,0 +1,158 @@
+#!/bin/bash
+
+set -e
+
+EXEC_NAME=$0
+USERS_FILE="users.txt"
+
+usage() {
+cat << END 1>&2
+Usage:
+    $EXEC_NAME -h
+    $EXEC_NAME [OPTIONS]
+
+Description:
+    Creates user <user_name>. Optionaly adds record into $USERS_FILE file
+    and prints it.
+
+Environment:
+    Following environment variables must be set:
+        DOMJUDGE_DOMAIN
+        DOMJUDGE_ADMIN_NAME (optional, default: admin)
+        DOMJUDGE_ADMIN_PASS
+
+Options:
+    -h               Prints this message.
+    -u <user_name>   Sets user name. Required.
+    -t <team_name>   Sets custom team name. Default: Same as <user_name>.
+    -p <pass_len>    Sets generated password length. Default: 10.
+    -g <group_ids>   Sets team group_ids. Comma separated list. Required.
+    -q               Turns on quiet mode.
+    -w               Don't write $USERS_FILE.
+END
+}
+
+passlen=10
+user_name=""
+team_name=""
+group_ids=""
+group_ids_set=false
+quiet=false
+write=true
+
+while getopts ":hu:p:t:g:qw" arg; do
+    case "${arg}" in
+        "h")
+            usage
+            exit 0
+            ;;
+
+        "u")
+            user_name="$OPTARG"
+            ;;
+
+        "p")
+            passlen="$OPTARG"
+            ;;
+
+        "t")
+            team_name="$OPTARG"
+            ;;
+
+        "g")
+            group_ids="$OPTARG"
+            group_ids_set=true
+            ;;
+
+        "q")
+            quiet=true
+            ;;
+
+        "w")
+            write=false
+            ;;
+
+        *)
+            usage
+            exit 1
+            ;;
+    esac
+done
+shift $((OPTIND-1))
+
+if [ -z "$user_name" ]; then
+    echo "error: user_name not set" 1>&2
+    usage
+    exit 1
+fi
+
+if [ "$group_ids_set" = false ]; then
+    echo "error: group_ids not set" 1>&2
+    usage
+    exit 1
+fi
+
+if [ -z "$DOMJUDGE_DOMAIN" ]; then
+    echo "error: DOMJUDGE_DOMAIN not set" 1>&2
+    usage
+    exit 1
+fi
+
+if [ -z "$DOMJUDGE_ADMIN_NAME" ]; then
+    DOMJUDGE_ADMIN_NAME="admin"
+fi
+
+if [ -z "$DOMJUDGE_ADMIN_PASS" ]; then
+    echo "error: DOMJUDGE_ADMIN_PASS not set" 1>&2
+    usage
+    exit 1
+fi
+
+if [ -z "$team_name" ]; then
+    team_name="$user_name"
+fi
+
+auth_header="Authorization: Basic $(echo -n "$DOMJUDGE_ADMIN_NAME:$DOMJUDGE_ADMIN_PASS" | base64)"
+base_url="$DOMJUDGE_DOMAIN/api/v4"
+
+out() {
+    val=$(cat)
+    if [ "$write" = true ]; then
+        echo "$val" >> "$USERS_FILE"
+    fi
+    if [ "$quiet" = false ]; then
+        echo "$val"
+    fi
+}
+
+pass="$(tr -dc 'A-Za-z0-9!?%=' < /dev/urandom | head -c "$passlen")"
+
+team_id=$(curl "$base_url/teams?strict=false" \
+    -s \
+    -X "POST" \
+    -H "accept: application/json" \
+    -H "Content-Type: multipart/form-data" \
+    -H "$auth_header" \
+    -F "id=$team_name" \
+    -F "name=$team_name" \
+    -F "group_ids=$group_ids" \
+    | jq -r ".id")
+
+curl "$base_url/users" \
+    -s \
+    -X "POST" \
+    -H "accept: application/json" \
+    -H "$auth_header" \
+    -H "Content-Type: application/json" \
+    -d "$(cat << END
+{
+    "username": "$user_name",
+    "name": "$user_name",
+    "password": "$pass",
+    "team_id": "$team_id",
+    "roles": ["team"]
+}
+END
+    )" > /dev/null
+
+echo "$user_name $team_name $pass" | out
