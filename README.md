@@ -4,6 +4,14 @@ Simple docker-compose.yml for DOMjudge and some utils.
 
 Tested on Arch Linux.
 
+## Instal dependencies
+These executables should be available on your system:
+- docker
+- docker-compose
+- git (for installation only)
+- jq (for bin/ scripts only)
+- 7z (for bin/ scripts only)
+
 ## Enable Linux Cgroups (v1)
 Enabling cgroups v1 is needed for judgehost.
 Open `/etc/default/grub` and add these options to `GRUB_CMDLINE_LINUX_DEFAULT`:
@@ -30,8 +38,6 @@ reboot
 ```
 
 ## Run DOMjudge
-Install `git`, `docker` and `docker-compose`.
-
 Clone this repository:
 ```bash
 git clone https://github.com/kotfind/domjudge-config
