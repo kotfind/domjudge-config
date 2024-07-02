@@ -50,7 +50,7 @@ Start server:
 docker compose up -d
 ```
 
-Check [localhost:8000](localhost:8000).
+Check [http://localhost:8000](http://localhost:8000).
 
 Get admin password with:
 ```bash
@@ -86,7 +86,7 @@ Go to `Teams > Add new team`.
 | User | Administrator |
 
 ### Config programming languages
-Go to `Languages`. Enable needed languages.
+To enable language `*LANG*` do `Languages > *LANG* > Allow submit`.
 
 ### Create a team group
 Add group (category) for teams. Go to `Team Categories > Add new category`.
