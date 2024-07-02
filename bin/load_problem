@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -e
+set -o pipefail
 
 EXEC_NAME="$0"
 
@@ -10,16 +11,42 @@ Usage:
     $EXEC_NAME -h
     $EXEC_NAME [OPTIONS] <short_name>
 
+Environment:
+    If used without -u flag, then following environment variables must be set:
+        DOMJUDGE_DOMAIN
+        DOMJUDGE_ADMIN_NAME (optional, default: admin)
+        DOMJUDGE_ADMIN_PASS
+
 Description:
     Upload problem from <short_name> directory into DOMjudge.
 
 Options:
-    -h                 Prints this message.
+    -h              Prints this message.
+    -a <archive>    Save archive with problem as <archive> file.
+    -u              Don't upload into system.
+    -c <cid>        Attach problem to contest <cid>.
+                    Required if used without -u. May be "none".
 END
 }
 
-while getopts ":h" arg; do
+archive_name=""
+upload=true
+contest_id=""
+
+while getopts ":ha:uc:" arg; do
     case "${arg}" in
+        "a")
+            archive_name="$OPTARG"
+            ;;
+
+        "u")
+            upload=false
+            ;;
+
+        "c")
+            contest_id="$OPTARG"
+            ;;
+
         "h")
             usage
             exit 0
@@ -39,6 +66,33 @@ if [ -z "$short_name" ]; then
     echo "error: short_name not set" 1>&2
     usage
     exit 1
+fi
+
+if [ -z "$contest_id" ] && [ "$upload" = true ]; then
+    echo "error: contest_id not set" 1>&2
+    usage
+    exit 1
+fi
+
+if [ "$upload" = true ]; then
+    if [ -z "$DOMJUDGE_DOMAIN" ]; then
+        echo "error: DOMJUDGE_DOMAIN not set" 1>&2
+        usage
+        exit 1
+    fi
+
+    if [ -z "$DOMJUDGE_ADMIN_NAME" ]; then
+        DOMJUDGE_ADMIN_NAME="admin"
+    fi
+
+    if [ -z "$DOMJUDGE_ADMIN_PASS" ]; then
+        echo "error: DOMJUDGE_ADMIN_PASS not set" 1>&2
+        usage
+        exit 1
+    fi
+
+    auth_header="Authorization: Basic $(echo -n "$DOMJUDGE_ADMIN_NAME:$DOMJUDGE_ADMIN_PASS" | base64)"
+    base_url="$DOMJUDGE_DOMAIN/api/v4"
 fi
 
 # Remove trailing slash:
@@ -98,5 +152,37 @@ if [ -z "$(ls -A "$accepted_dir")" ]; then
     exit 1
 fi
 
-# -------------------- Upload --------------------
-7z a "$short_name.zip" "$(realpath "$short_name")/*" > /dev/null
+# -------------------- Create Archive --------------------
+tmp_archive_name=$(mktemp -u /tmp/tmp.XXXXXXXX.zip)
+
+# 7z requires absolute path for whatever reason
+7z a "$tmp_archive_name" "$(realpath "$short_name")/*" > /dev/null
+
+# -------------------- Send into DOMjudge --------------------
+if [ "$upload" = true ]; then
+    url=""
+    if [ "$contest_id" = "none" ]; then
+        url="$base_url/problems"
+    else
+        url="$base_url/contests/$contest_id/problems"
+    fi
+
+    messages=$(curl "$url" \
+        -s -f \
+        -X "POST" \
+        -H "$auth_header" \
+        -H "accept: application/json" \
+        -H "Content-Type: multipart/form-data" \
+        -F "zip=@$tmp_archive_name;filename=$short_name.zip;type=application/zip" \
+        | jq -r '.messages.info | join("|")' \
+        | sed 's/|\|^/\n  + /g')
+
+    echo "Messages:$messages"
+fi
+
+# -------------------- Clean Up --------------------
+if [ -z "$archive_name" ]; then
+    rm "$tmp_archive_name"
+else
+    mv "$tmp_archive_name" "$archive_name"
+fi
