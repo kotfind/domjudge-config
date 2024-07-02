@@ -22,15 +22,17 @@ Options:
     -S <secrets_num>   Sets number of secrets. Default: 1
     -t <time_limit>    Sets time limit in seconds. Default: 1
     -m <memory_limit>  Sets memory limit in kilobytes. Default: 1024
+    -T                 Generates Typst template in <short_name>/problem.typ
 END
 }
 
 samples_num=1
 secrets_num=1
 time_limit=1
-memory_limit=1
+memory_limit=1024
+gen_typst_template=false
 
-while getopts ":hs:S:t:m:" arg; do
+while getopts ":hs:S:t:m:T" arg; do
     case "${arg}" in
         "h")
             usage
@@ -51,6 +53,10 @@ while getopts ":hs:S:t:m:" arg; do
 
         "m")
             memory_limit="$OPTARG"
+            ;;
+
+        "T")
+            gen_typst_template=true
             ;;
 
         *)
@@ -82,6 +88,25 @@ cat << END > "$short_name/domjudge-problem.ini"
 timelimit = $time_limit
 END
 
+# -------------------- Problem --------------------
+
+if [ "$gen_typst_template" = true ]; then
+cat << END > "$short_name/problem.typ"
+= Задача $short_name. $long_name
+
+== Формат ввода
+
+== Формат вывода
+
+== Примеры
+#table(
+    columns: (50%, 50%),
+    [*Ввод*], [*Вывод*],
+    \`\`, \`\`,
+)
+END
+fi
+
 # -------------------- Samples --------------------
 
 sample_dir="$short_name/data/sample"
@@ -98,66 +123,24 @@ for i in $(seq 1 $secrets_num); do
     touch "$secret_dir/$i.ans"
 done
 
-# -------------------- Input Validators --------------------
-
-input_validators_dir="$short_name/input_validators"
-mkdir -p "$input_validators_dir"
-
-cat << END > "$input_validators_dir/validate.py"
-#!/bin/python3
-
-# TODO
-
-exit(42) # Success
-END
-
-# -------------------- Statement --------------------
-
-statement_dir="$short_name/problem_statement"
-mkdir -p "$statement_dir"
-cat << END > "$statement_dir/solution.txt"
-TODO
-END
-
-cat << END > "$statement_dir/problem.ru.tex"
-\problemname{Задача $short_name. $long_name}
-% \illustration{.4}{problem}{}
-% TODO
-
-\section*{Формат ввода}
-% TODO
-
-\section*{Формат вывода}
-% TODO
-END
-
 # -------------------- Submissions --------------------
 submissions_dir="$short_name/submissions"
 accepted_dir="$submissions_dir/accepted"
-wrong_answer_dir="$submissions_dir/wrong_answer"
-time_limit_exceeded_dir="$submissions_dir/time_limit_exceeded"
-run_time_error_dir="$submissions_dir/run_time_error"
 
 mkdir -p "$submissions_dir"
 mkdir -p "$accepted_dir"
-mkdir -p "$wrong_answer_dir"
-mkdir -p "$time_limit_exceeded_dir"
-mkdir -p "$run_time_error_dir"
-
-touch "$accepted_dir/main.cpp"
 
 # -------------------- Message --------------------
 cat << END
 All Done!
 
-Please update following files/directories:
+Please update ALL following directories:
     $sample_dir/
     $secret_dir/
-    $input_validators_dir/validate.py
-    $statement_dir/solution.txt
-    $statement_dir/problem.ru.tex
-    $submissions_dir/
+    $accepted_dir/
 
-Please create following files:
-    $short_name/problem.pdf or $short_name/problem.html or $short_name/problem.txt
+Please create ONE following files:
+    $short_name/problem.pdf
+    $short_name/problem.html
+    $short_name/problem.txt
 END
