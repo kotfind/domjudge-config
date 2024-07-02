@@ -3,8 +3,6 @@
 set -e
 
 EXEC_NAME=$0
-# TEAMS_FILE="teams.yml"
-ACCOUNTS_FILE="accounts.yml"
 USERS_FILE="users.txt"
 
 usage() {
@@ -14,8 +12,14 @@ Usage:
     $EXEC_NAME [OPTIONS]
 
 Description:
-    Generates two files: $ACCOUNTS_FILE and $USERS_FILE (optional).
-    The first one is to be imported, the second one is just for convenience.
+    Generates <number> users. Optionaly adds records into $USERS_FILE file and
+    prints them.
+
+Environment:
+    Following environment variables must be set:
+        DOMJUDGE_DOMAIN
+        DOMJUDGE_ADMIN_NAME (optional, default: admin)
+        DOMJUDGE_ADMIN_PASS
 
 Options:
     -h                  Prints this message.
@@ -23,6 +27,7 @@ Options:
     -u <user_prefix>    Sets user name prefix.
     -t <team_prefix>    Sets team name prefix.
     -p <pass_length>    Sets generated password length.
+    -g <group_ids>      Sets team group_ids. Comma separated list. Required.
     -q                  Turns on quiet mode.
     -w                  Don't write $USERS_FILE.
 END
@@ -30,12 +35,10 @@ END
 
 user_prefix="user"
 team_prefix="team"
-passlen=10
 num=10
-quiet=false
-write=true
+add_user_flags=""
 
-while getopts ":n:u:t:p:hqw" arg; do
+while getopts ":n:u:t:p:hg:qw" arg; do
     case "${arg}" in
         "n")
             num="$OPTARG"
@@ -49,16 +52,22 @@ while getopts ":n:u:t:p:hqw" arg; do
             team_prefix="$OPTARG"
             ;;
 
+        "g")
+            if [ ! -z "$OPTARG" ]; then
+                add_user_flags="$add_user_flags -g $OPTARG"
+            fi
+            ;;
+
         "p")
-            passlen="$OPTARG"
+            add_user_flags="$add_user_flags -p $OPTARG"
             ;;
 
         "q")
-            quiet=true
+            add_user_flags="$add_user_flags -q"
             ;;
 
         "w")
-            write=false
+            add_user_flags="$add_user_flags -w"
             ;;
 
         "h")
@@ -74,55 +83,11 @@ while getopts ":n:u:t:p:hqw" arg; do
 done
 shift $((OPTIND-1))
 
-out() {
-    val=$(cat)
-    if [ "$write" = true ]; then
-        echo "$val" >> "$USERS_FILE"
-    fi
-    if [ "$quiet" = false ]; then
-        echo "$val"
-    fi
-}
-
 numlen=$(echo -n "$num" | wc -c)
-userlen=$(echo -n "$user_prefix$num" | wc -c)
-teamlen=$(echo -n "$team_prefix$num" | wc -c)
-
-# > "$TEAMS_FILE"
-> "$ACCOUNTS_FILE"
-
-if [ "$write" = true ]; then
-    > "$USERS_FILE"
-fi
-
-printf "%-*s %-*s %-*s\n" \
-    "$userlen" "USER" \
-    "$teamlen" "TEAM" \
-    "$passlen" "PASS" \
-    | out
 
 for i in $(seq 1 $num); do
-    team=$(printf "%s%0*d" "$team_prefix" "$numlen" "$i")
-    user=$(printf "%s%0*d" "$user_prefix" "$numlen" "$i")
-    pass="$(tr -dc 'A-Za-z0-9!?%=' < /dev/urandom | head -c "$passlen")"
+    team_name=$(printf "%s%0*d" "$team_prefix" "$numlen" "$i")
+    user_name=$(printf "%s%0*d" "$user_prefix" "$numlen" "$i")
 
-#     cat << END >> "$TEAMS_FILE"
-# - id: "$team"
-#   name: "$team"
-#   group_ids:
-#     - 3
-# 
-# END
-
-    cat << END >> "$ACCOUNTS_FILE"
-- id: "$user"
-  name: "$user"
-  username: "$user"
-  password: "$pass"
-  type: "team"
-  team_id: "$team"
-
-END
-
-    echo "$user $team $pass" | out
+    "$(dirname "$0")/add_user" $add_user_flags -t "$team_name" -u "$user_name"
 done
