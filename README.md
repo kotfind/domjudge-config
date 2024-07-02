@@ -14,12 +14,12 @@ Open `/etc/default/grub` and add these options to `GRUB_CMDLINE_LINUX_DEFAULT`:
     - systemd.unified_cgroup_hierarchy=0 (if cgroup (v2) is enabled by default)
     - SYSTEMD_CGROUP_ENABLE_LEGACY_FORCE=1 (needed on some systemd)
 
-So `/etc/default/grub` should have similiar line:
+So `/etc/default/grub` should have similar line:
 ```bash
 GRUB_CMDLINE_LINUX_DEFAULT="... cgroup_enable=memory,cpuset swapaccount=1 isolcpus=2 systemd.unified_cgroup_hierarchy=0 SYSTEMD_CGROUP_ENABLE_LEGACY_FORCE=1"
 ```
 
-Updage grub config:
+Update grub config:
 ```bash
 grub-mkconfig -o /boot/grub/grub.cfg
 ```
@@ -90,7 +90,7 @@ Add group (category) for teams. Go to `Team Categories > Add new category`.
 | Name | Teams |
 | Visible | Yes |
 
-Remember it's `ID`. It sholud be passed to `bin/add_user` and `bin/add_user_batch` scripts with `-g` flags if used.
+Remember it's `ID`. It should be passed to `bin/add_user` and `bin/add_user_batch` scripts with `-g` flags if used.
 
 ### Create user
 You can either add users one by one with `bin/add_user` script
@@ -100,7 +100,7 @@ bin/add_user -h
 bin/add_user_batch -h
 ```
 
-> **_NOTE:_** Don't forget the [Team Group step][#team-group].
+> **_NOTE:_** Don't forget the [team group step](#create-a-team-group).
 
 ### Create a contest
 Create a contest. Go to `Contests > Add new contest`.
@@ -114,7 +114,7 @@ Create a contest. Go to `Contests > Add new contest`.
 | End time | \*Value\* |
 
 ### Add a problem
-Create a problem template with `bin/gen_problem_template`. For mor information run:
+Create a problem template with `bin/gen_problem_template`. For more information run:
 ```bash
 bin/gen_problem_template -h
 ```
