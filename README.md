@@ -4,7 +4,7 @@ Simple docker-compose.yml for DOMjudge and some utils.
 
 Tested on Arch Linux.
 
-## Instal dependencies
+## Install dependencies
 These executables should be available on your system:
 - docker
 - docker-compose
@@ -16,11 +16,11 @@ These executables should be available on your system:
 Enabling cgroups v1 is needed for judgehost.
 Open `/etc/default/grub` and add these options to `GRUB_CMDLINE_LINUX_DEFAULT`:
 
-    - cgroup_enable=memory,cpuset
-    - swapaccount=1
-    - isolcpus=2 (optional)
-    - systemd.unified_cgroup_hierarchy=0 (if cgroup (v2) is enabled by default)
-    - SYSTEMD_CGROUP_ENABLE_LEGACY_FORCE=1 (needed on some systemd)
+* cgroup_enable=memory,cpuset
+* swapaccount=1
+* isolcpus=2 (optional)
+* systemd.unified_cgroup_hierarchy=0 (if cgroup (v2) is enabled by default)
+* SYSTEMD_CGROUP_ENABLE_LEGACY_FORCE=1 (needed on some systemd)
 
 So `/etc/default/grub` should have similar line:
 ```bash
